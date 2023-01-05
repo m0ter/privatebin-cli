@@ -20,5 +20,5 @@ jobs:
         goarch: ${{ GOARCH }}
         goversion: 1.19
         binary_name: privatebin
-        asset_name: privatebin-${{ GOOS }}-${{ GOARCH }}
+        asset_name: "privatebin-$GOOS-$GOARCH"
         compress_assets: OFF
