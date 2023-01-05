@@ -25,7 +25,7 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func readStdIn() string {
+func readStdin() string {
 	bytes, err := io.ReadAll(os.Stdin)
 	if err == nil {
 		return string(bytes)
@@ -36,7 +36,7 @@ func readStdIn() string {
 	return ""
 }
 
-func checkIfStdIn() bool {
+func isStdin() bool {
 	stat, _ := os.Stdin.Stat()
 
 	return (stat.Mode() & os.ModeCharDevice) == 0
@@ -46,32 +46,21 @@ var expiresOptions = []string{"5min", "10min", "1hour", "1day", "1week", "1month
 
 var rootCmd = &cobra.Command{
 	Use: `privatebin "string for privatebin"... [flags]`,
-	Example: `privatebin "encrypt this string" --expires 5min -B --password Secret
+	Example: `privatebin "encrypt this string" --expires 1day --burn --password Secret
 	cat textfile | privatebin --expires 5min --url https://privatebin.net
 echo "hello\nworld" | privatebin --expires never -B`,
 	Short:   "CLI access to privatebin",
-	Version: "1.0",
+	Version: "1.0.1",
 	Run: func(cmd *cobra.Command, args []string) {
-		var url string
 
-		url, err := cmd.Flags().GetString("url")
-		if err != nil {
-			fmt.Println(err)
+		url := viper.GetViper().GetString("url")
+
+		if len(url) == 0 {
+			fmt.Println("--url is required")
 			os.Exit(1)
 		}
 
-		if len(url) == 0 {
-			url = viper.GetViper().GetString("url")
-		}
-
-		if len(url) == 0 {
-			fmt.Println("--url is required or set url in config file")
-			os.Exit(1)
-		}
-
-		expires, _ := cmd.Flags().GetString("expires")
-		burn, _ := cmd.Flags().GetBool("burn")
-		deleteLink, _ := cmd.Flags().GetBool("delete")
+		expires := viper.GetViper().GetString("expires")
 
 		if !contains(expiresOptions, expires) {
 			fmt.Println(fmt.Sprintf("--expires can only be one of %s\n", strings.Join(expiresOptions[:], ", ")))
@@ -80,8 +69,8 @@ echo "hello\nworld" | privatebin --expires never -B`,
 
 		stringToEncrypt := ""
 
-		if checkIfStdIn() {
-			stringToEncrypt = readStdIn()
+		if isStdin() {
+			stringToEncrypt = readStdin()
 		} else {
 			if len(args) == 0 {
 				fmt.Println("No arguments supplied")
@@ -93,6 +82,9 @@ echo "hello\nworld" | privatebin --expires never -B`,
 		page := rod.New().MustConnect().MustPage(url).MustWindowFullscreen()
 
 		defer page.MustClose()
+
+		burn := viper.GetViper().GetBool("burn")
+		deleteLink := viper.GetViper().GetBool("delete")
 
 		if cmd.Flags().Changed("password") {
 			password, err := cmd.Flags().GetString("password")
@@ -145,13 +137,16 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.privatebin.yaml or $PWD/.privatebin.yaml)")
-	rootCmd.PersistentFlags().String("expires", "", fmt.Sprintf("Required flag for how long the snippet should live\n%s", strings.Join(expiresOptions[:], ", ")))
+	rootCmd.PersistentFlags().String("expires", "5min", fmt.Sprintf("How long the snippet should live\n%s", strings.Join(expiresOptions[:], ", ")))
 	rootCmd.PersistentFlags().BoolP("burn", "B", false, "Burn after reading")
 	rootCmd.PersistentFlags().BoolP("delete", "D", false, "Show delete link")
 	rootCmd.PersistentFlags().String("password", "", "Password for the snippet")
 	rootCmd.PersistentFlags().String("url", "", "URL to privatebin app")
 
-	rootCmd.MarkPersistentFlagRequired("expires")
+	viper.BindPFlag("expires", rootCmd.PersistentFlags().Lookup("expires"))
+	viper.BindPFlag("burn", rootCmd.PersistentFlags().Lookup("burn"))
+	viper.BindPFlag("delete", rootCmd.PersistentFlags().Lookup("delete"))
+	viper.BindPFlag("url", rootCmd.PersistentFlags().Lookup("url"))
 }
 
 func initConfig() {

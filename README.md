@@ -14,14 +14,26 @@ Build binary
 go build .
 ```
 
-Create config .privatebin.yaml in $PWD or $HOME/ or use the --url flag
+Create config .privatebin.yaml in $PWD or $HOME/ or use the --url flag with contents
 
-```
+```yaml
 url: https://privatebin.net
 ```
 
-Run the binary
+expires, burn and delete can also be configured in the config
+
+ex.
+```yaml
+url: https://privatebin.net
+expires: 5min
+burn: true
+delete: false
 ```
+
+If the config has burn: true and you want to override you can do that by passing false `--burn=false`
+
+Run the binary
+```bash
 testing@pc:~$ ./privatebin -h
 CLI access to privatebin
 
@@ -29,7 +41,7 @@ Usage:
   privatebin "string for privatebin"... [flags]
 
 Examples:
-privatebin "encrypt this string" --expires 5min -B --password Secret
+privatebin "encrypt this string" --expires 1day --burn --password Secret
         cat textfile | privatebin --expires 5min --url https://privatebin.net
 echo "hello\nworld" | privatebin --expires never -B
 
@@ -37,20 +49,20 @@ Flags:
   -B, --burn              Burn after reading
       --config string     config file (default is $HOME/.privatebin.yaml or $PWD/.privatebin.yaml)
   -D, --delete            Show delete link
-      --expires string    Required flag for how long the snippet should live
-                          5min, 10min, 1hour, 1day, 1week, 1month, 1year, never
+      --expires string    How long the snippet should live
+                          5min, 10min, 1hour, 1day, 1week, 1month, 1year, never (default "5min")
   -h, --help              help for privatebin
       --password string   Password for the snippet
       --url string        URL to privatebin app
   -v, --version           version for privatebin
 ```
 
-```
-testing@pc:~$ ./privatebin "encrypt this string" --expires 5min -B
+```bash
+testing@pc:~$ ./privatebin "encrypt this string" --burn
 https://privatebin.net/?1a803063047a7672#289BHS9hJBPpsqVeHqG8bWk8dLpMSreAcx9QGKQb5Gox
 ```
 
-```
+```bash
 testing@pc:~$ echo "hello\nworld" | ./privatebin --expires never -B -D
 Secret URL: https://privatebin.net/?bdf5bac30d32e74b#92vEmyscPwfvyRcbZ1eRxf2mZ1HKdhWdm4Q7iWNEnU3s
 Delete URL: https://privatebin.net/?pasteid=bdf5bac30d32e74b&deletetoken=2aaeee6ccd4d54e57e86483c6e3d02fcd1430078bdce2249089f62bb411bfb69
