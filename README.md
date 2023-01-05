@@ -14,6 +14,10 @@ Build binary
 go build .
 ```
 
+or download the latest built binary
+
+https://github.com/M0ter/privatebin-cli/releases/latest/download/privatebin-linux-amd64
+
 Create config .privatebin.yaml in $PWD or $HOME/ or use the --url flag with contents
 
 ```yaml
