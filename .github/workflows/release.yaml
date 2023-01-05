@@ -16,9 +16,9 @@ jobs:
     - uses: wangyoucao577/go-release-action@v1.34
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: ${{ GOOS }}
-        goarch: ${{ GOARCH }}
+        goos: ${{ env.GOOS }}
+        goarch: ${{ env.GOARCH }}
         goversion: 1.19
         binary_name: privatebin
-        asset_name: "privatebin-$GOOS-$GOARCH"
+        asset_name: privatebin-${{ env.GOOS }}-${{ env.GOARCH }}
         compress_assets: OFF
