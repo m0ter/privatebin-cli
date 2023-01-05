@@ -1,6 +1,11 @@
+name: Add built binary to release
 on:
   release:
     types: [created]
+
+env:
+  GOOS: linux
+  GOARCH: amd64
 
 jobs:
   release-linux-amd64:
@@ -11,9 +16,9 @@ jobs:
     - uses: wangyoucao577/go-release-action@v1.34
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: linux
-        goarch: amd64
+        goos: ${{ GOOS }}
+        goarch: ${{ GOARCH }}
         goversion: 1.19
         binary_name: privatebin
-        asset_name: privatebin-${{ goos }}-${{ goarch }}
+        asset_name: privatebin-${{ GOOS }}-${{ GOARCH }}
         compress_assets: OFF
