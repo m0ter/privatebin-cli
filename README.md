@@ -18,7 +18,7 @@ Create config .privatebin.yaml in $PWD or $HOME/ or use the --url flag with cont
 url: https://privatebin.net
 ```
 
-expires, burn and delete can also be configured in the config
+expires, burn, format and output can also be configured in the config
 
 ex.
 ```yaml
@@ -29,7 +29,7 @@ format: plain
 output: rich
 ```
 
-If the config has burn: true and you want to override you can do that by passing false `--burn=false`
+If the config has burn: true and you want to override you can do that by passing false `--burn false`
 
 Run the binary
 ```bash
