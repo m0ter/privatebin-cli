@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"privatebin/utils"
@@ -165,7 +165,7 @@ cat textfile | privatebin --url https://yourprivatebin.com`,
 		}()
 
 		// Read the response body.
-		response, err := ioutil.ReadAll(res.Body)
+		response, err := io.ReadAll(res.Body)
 		if isVerbose {
 			fmt.Fprintln(os.Stderr, "Reading response")
 		}
@@ -182,21 +182,18 @@ cat textfile | privatebin --url https://yourprivatebin.com`,
 		if isVerbose {
 			fmt.Fprintln(os.Stderr, "Printing data")
 		}
-		secretUrl := fmt.Sprintf("%s%s#%s\n", url, pasteResponse.URL, base58.Encode(masterKey))
+		secretUrl := fmt.Sprintf("%s%s#%s", url, pasteResponse.URL, base58.Encode(masterKey))
 
-		deleteUrl := fmt.Sprintf("%s%s&deletetoken=%s\n", url, pasteResponse.URL, pasteResponse.DeleteToken)
+		deleteUrl := fmt.Sprintf("%s%s&deletetoken=%s", url, pasteResponse.URL, pasteResponse.DeleteToken)
 
 		switch output {
 		case "simple":
-			fmt.Print(secretUrl)
-			break
+			fmt.Println(secretUrl)
 		case "rich":
-			fmt.Print("Secret URL: " + secretUrl)
-			fmt.Print(fmt.Sprintf("Delete URL: %s", deleteUrl))
-			break
+			fmt.Println("Secret URL: " + secretUrl)
+			fmt.Printf("Delete URL: %s\n", deleteUrl)
 		case "json":
-			fmt.Print(fmt.Sprintf(`{"url": "%s","delete_url": "%s"`, secretUrl, deleteUrl))
-			break
+			fmt.Printf(`{"url": "%s","delete_url": "%s"}\n`, secretUrl, deleteUrl)
 		}
 
 	},
@@ -255,7 +252,6 @@ func initConfig() {
 	}
 }
 
-// SpecArray .
 func (spec *PasteSpec) SpecArray() []interface{} {
 	return []interface{}{
 		spec.IV,
@@ -270,19 +266,16 @@ func (spec *PasteSpec) SpecArray() []interface{} {
 }
 
 func encrypt(master []byte, password string, message []byte, format string, burn bool) (*PasteData, error) {
-	// Generate a initialization vector.
 	iv, err := utils.GenRandomBytes(12)
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate salt.
 	salt, err := utils.GenRandomBytes(8)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the Paste Data and generate a key.
 	paste := &PasteData{
 		Formatter:        format,
 		BurnAfterReading: burn,
@@ -324,7 +317,6 @@ func encrypt(master []byte, password string, message []byte, format string, burn
 	return paste, nil
 }
 
-// PasteRequest .
 type PasteRequest struct {
 	V     int              `json:"v"`
 	AData []interface{}    `json:"adata"`
@@ -332,12 +324,10 @@ type PasteRequest struct {
 	CT    string           `json:"ct"`
 }
 
-// PasteRequestMeta .
 type PasteRequestMeta struct {
 	Expire string `json:"expire"`
 }
 
-// PasteResponse .
 type PasteResponse struct {
 	Status      int    `json:"status"`
 	ID          string `json:"id"`
@@ -345,12 +335,10 @@ type PasteResponse struct {
 	DeleteToken string `json:"deletetoken"`
 }
 
-// PasteContent .
 type PasteContent struct {
 	Paste string `json:"paste"`
 }
 
-// PasteSpec .
 type PasteSpec struct {
 	IV          string
 	Salt        string
@@ -362,7 +350,6 @@ type PasteSpec struct {
 	Compression string
 }
 
-// PasteData .
 type PasteData struct {
 	*PasteSpec
 	Data             []byte
