@@ -1,4 +1,5 @@
 url: https://privatebin.net
 expires: 5min
 burn: true
-delete: false
+format: plain
+output: rich
