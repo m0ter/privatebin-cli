@@ -218,7 +218,7 @@ func init() {
 	rootCmd.PersistentFlags().String("url", "https://privatebin.net", "URL to privatebin app")
 	rootCmd.PersistentFlags().String("password", "", "Password for the paste")
 	rootCmd.PersistentFlags().String("output", "simple", fmt.Sprintf("Output format of the returned data\n%s", strings.Join(outputOptions[:], ", ")))
-	rootCmd.PersistentFlags().String("format", "plaintext", fmt.Sprintf("Paste format\n%s", strings.Join(formatOptions[:], ", ")))
+	rootCmd.PersistentFlags().String("format", "plain", fmt.Sprintf("Paste format\n%s", strings.Join(formatOptions[:], ", ")))
 
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose output")
 
