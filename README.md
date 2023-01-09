@@ -49,7 +49,7 @@ Flags:
       --expires string    How long the snippet should live
                           5min, 10min, 1hour, 1day, 1week, 1month, 1year, never (default "5min")
       --format string     Paste format
-                          plain, code, md (default "plaintext")
+                          plain, code, md (default "plain")
   -h, --help              help for privatebin
       --output string     Output format of the returned data
                           simple, rich, json (default "simple")
