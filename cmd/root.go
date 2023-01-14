@@ -26,20 +26,11 @@ var expiresOptions = []string{"5min", "10min", "1hour", "1day", "1week", "1month
 var outputOptions = []string{"simple", "rich", "json"}
 var formatOptions = []string{"plain", "code", "md"}
 
-func flagErrorMessage(flag string) error {
-	return fmt.Errorf("%s is required", flag)
-}
-
 func flagErrorOption(flag string, options []string) error {
 	return fmt.Errorf("%s can only be on of %s", flag, strings.Join(options[:], ", "))
 }
 
 func flagValidation() (string, string, string, string) {
-	if len(viper.GetViper().GetString("url")) == 0 {
-		fmt.Println(flagErrorMessage("--url"))
-		os.Exit(1)
-	}
-
 	if !utils.Contains(outputOptions, viper.GetViper().GetString("output")) {
 		fmt.Println(flagErrorOption("--output", outputOptions))
 		os.Exit(1)
@@ -75,6 +66,12 @@ cat textfile | privatebin --url https://yourprivatebin.com`,
 		url, output, expires, format := flagValidation()
 
 		burn := viper.GetViper().GetBool("burn")
+		discussion := viper.GetViper().GetBool("discussion")
+
+		if burn && discussion {
+			fmt.Println("Cannot open discussion on paste with BurnAfterReading")
+			os.Exit(1)
+		}
 
 		stringToEncrypt := ""
 		if utils.IsStdin() {
@@ -111,7 +108,7 @@ cat textfile | privatebin --url https://yourprivatebin.com`,
 		if isVerbose {
 			fmt.Fprintln(os.Stderr, "Encrypting data")
 		}
-		pasteData, err := encrypt(masterKey, password, pasteContent, format, burn)
+		pasteData, err := encrypt(masterKey, password, pasteContent, format, burn, discussion)
 		if err != nil {
 			panic(err)
 		}
@@ -184,7 +181,7 @@ cat textfile | privatebin --url https://yourprivatebin.com`,
 		}
 		secretUrl := fmt.Sprintf("%s%s#%s", url, pasteResponse.URL, base58.Encode(masterKey))
 
-		deleteUrl := fmt.Sprintf("%s%s&deletetoken=%s", url, pasteResponse.URL, pasteResponse.DeleteToken)
+		deleteUrl := fmt.Sprintf("%s?pasteid=%s&deletetoken=%s", url, strings.Split(pasteResponse.URL, "?")[1], pasteResponse.DeleteToken)
 
 		switch output {
 		case "simple":
@@ -212,6 +209,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.privatebin.yaml or $PWD/.privatebin.yaml)")
 	rootCmd.PersistentFlags().String("expires", "5min", fmt.Sprintf("How long the snippet should live\n%s", strings.Join(expiresOptions[:], ", ")))
 	rootCmd.PersistentFlags().BoolP("burn", "B", false, "Burn after reading")
+	rootCmd.PersistentFlags().Bool("discussion", false, "Open discussion")
 	rootCmd.PersistentFlags().String("url", "https://privatebin.net", "URL to privatebin app")
 	rootCmd.PersistentFlags().String("password", "", "Password for the paste")
 	rootCmd.PersistentFlags().String("output", "simple", fmt.Sprintf("Output format of the returned data\n%s", strings.Join(outputOptions[:], ", ")))
@@ -221,6 +219,7 @@ func init() {
 
 	viper.BindPFlag("expires", rootCmd.PersistentFlags().Lookup("expires"))
 	viper.BindPFlag("burn", rootCmd.PersistentFlags().Lookup("burn"))
+	viper.BindPFlag("discussion", rootCmd.PersistentFlags().Lookup("discussion"))
 	viper.BindPFlag("url", rootCmd.PersistentFlags().Lookup("url"))
 	viper.BindPFlag("output", rootCmd.PersistentFlags().Lookup("output"))
 	viper.BindPFlag("format", rootCmd.PersistentFlags().Lookup("format"))
@@ -265,7 +264,7 @@ func (spec *PasteSpec) SpecArray() []interface{} {
 	}
 }
 
-func encrypt(master []byte, password string, message []byte, format string, burn bool) (*PasteData, error) {
+func encrypt(master []byte, password string, message []byte, format string, burn bool, discussion bool) (*PasteData, error) {
 	iv, err := utils.GenRandomBytes(12)
 	if err != nil {
 		return nil, err
@@ -279,6 +278,7 @@ func encrypt(master []byte, password string, message []byte, format string, burn
 	paste := &PasteData{
 		Formatter:        format,
 		BurnAfterReading: burn,
+		OpenDiscussion:   discussion,
 		PasteSpec: &PasteSpec{
 			IV:          utils.Base64(iv),
 			Salt:        utils.Base64(salt),
@@ -355,6 +355,7 @@ type PasteData struct {
 	Data             []byte
 	Formatter        string
 	BurnAfterReading bool
+	OpenDiscussion   bool
 }
 
 func (paste *PasteData) adata() []interface{} {
@@ -362,7 +363,7 @@ func (paste *PasteData) adata() []interface{} {
 	return []interface{}{
 		paste.SpecArray(),
 		paste.Formatter,
-		0,
+		bool2int[paste.OpenDiscussion],
 		bool2int[paste.BurnAfterReading],
 	}
 }
